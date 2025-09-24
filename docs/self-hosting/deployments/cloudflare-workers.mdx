@@ -1,0 +1,107 @@
+---
+title: "Cloudflare Workers"
+icon: "cloud"
+iconType: "solid"
+---
+
+Running Cal.com on [Cloudflare Workers](https://developers.cloudflare.com/workers/) allows you to host the entire Next.js application on Cloudflare's global network while keeping all product features intact. This guide explains how to use the new Cloudflare tooling that has been added to the repository.
+
+## Requirements
+
+- A Cloudflare account with Workers enabled and the **Workers Paid** plan (the free tier does not provide enough CPU for Cal.com).
+- A Cloudflare [D1](https://developers.cloudflare.com/d1/) database (created in the Cloudflare dashboard or via Wrangler).
+- An SMTP provider for transactional email (Mailhog is sufficient for local testing).
+- Node.js 18 or later installed locally for building.
+
+## Repository preparation
+
+<Steps>
+    <Step title="Install dependencies">
+        ```bash
+        yarn install
+        ```
+    </Step>
+    <Step title="Provision the D1 database">
+        ```bash
+        wrangler d1 create calcom
+        ```
+        Copy the generated database UUID into the `CALCOM_DB` binding in `apps/web/wrangler.toml`. Wrangler will also output the
+        path to the local SQLite file that is used when running `wrangler dev`.
+    </Step>
+    <Step title="Apply the Prisma schema to D1">
+        Use Prisma to generate the SQL statements for the D1 schema and upload them with Wrangler:
+        ```bash
+        mkdir -p .cloudflare/d1
+        yarn prisma migrate diff \
+          --from-empty \
+          --to-schema-datamodel packages/prisma/schema.prisma \
+          --script \
+          --output .cloudflare/d1/schema.sql
+
+        wrangler d1 execute calcom --file=.cloudflare/d1/schema.sql --config apps/web/wrangler.toml
+        ```
+        Re-run the `wrangler d1 execute` command whenever new Prisma migrations are added to the repository.
+    </Step>
+    <Step title="Review the Worker configuration">
+        Update `apps/web/wrangler.toml` with your Cloudflare `account_id` and replace the `NEXT_PUBLIC_*` URLs so they point to the hostname you plan to use. Secrets such as `NEXTAUTH_SECRET`, `CALENDSO_ENCRYPTION_KEY`, and other sensitive values must **not** be written into the file—store them with `wrangler secret put` instead. The `CALCOM_DB` binding is declared directly in `wrangler.toml` and does not require a secret.
+    </Step>
+    <Step title="Prepare local Worker variables">
+        Copy `apps/web/.dev.vars.example` to `apps/web/.dev.vars` and adjust the placeholder values. Wrangler will load this file when running `yarn cf:dev`.
+    </Step>
+</Steps>
+
+## Local Cloudflare runtime
+
+Two new scripts are available for Cloudflare builds:
+
+- `yarn cf:build` – builds the Next.js application using `@cloudflare/next-on-pages` and emits the Worker bundle into `.vercel/output`.
+- `yarn cf:dev` – rebuilds the Worker bundle and launches `wrangler dev` so you can exercise the app inside Cloudflare's runtime.
+
+```bash
+yarn cf:dev
+```
+
+The development server defaults to <http://127.0.0.1:8787>. Ensure the URLs in your `.dev.vars` file match this host so callbacks such as `NEXTAUTH_URL` resolve correctly.
+
+## Deploying to Cloudflare Workers
+
+<Steps>
+    <Step title="Authenticate Wrangler">
+        ```bash
+        yarn workspace @calcom/web cf:deploy --dry-run
+        ```
+        Wrangler will guide you through `wrangler login` if you have not authenticated yet.
+    </Step>
+    <Step title="Set required secrets">
+        Use Wrangler to store all sensitive values before deploying:
+        ```bash
+        wrangler secret put NEXTAUTH_SECRET --config apps/web/wrangler.toml
+        wrangler secret put CALENDSO_ENCRYPTION_KEY --config apps/web/wrangler.toml
+        wrangler secret put CRON_API_KEY --config apps/web/wrangler.toml
+        ```
+        Cal.com now connects to the D1 database through the `CALCOM_DB` binding, so `DATABASE_URL` and `DATABASE_DIRECT_URL` se
+        crets are no longer required for Worker deployments. Repeat the `wrangler secret put` command for any other entries from
+        `.env.example` that your installation requires.
+    </Step>
+    <Step title="Run the production build and upload">
+        ```bash
+        yarn cf:deploy
+        ```
+        The command runs the Cloudflare-specific build and deploys the generated Worker alongside the static assets.
+    </Step>
+    <Step title="Configure routing">
+        Deployments default to a Workers.dev subdomain. To use your own domain, add a `route` or `routes` section to `apps/web/wrangler.toml` and configure the DNS record inside Cloudflare.
+    </Step>
+</Steps>
+
+<Info>
+`NEXTAUTH_URL`, `NEXT_PUBLIC_WEBAPP_URL`, and related settings must always match the final public URL served by Cloudflare Workers. Mismatched values will cause authentication callbacks and redirect flows to fail.
+</Info>
+
+## Troubleshooting
+
+- **Missing environment variables at build time:** verify they are either exported in your shell or defined through Wrangler secrets. The Next.js configuration aborts the build if `NEXTAUTH_SECRET` or `CALENDSO_ENCRYPTION_KEY` are absent.
+- **Prisma connection errors:** confirm that the D1 binding is present in `wrangler.toml`, the UUID matches the database you provisioned, and that the schema SQL was executed with `wrangler d1 execute` before starting the Worker.
+- **Static assets returning 404s:** ensure you ran `yarn cf:build` prior to `wrangler dev` or `wrangler deploy`. The Worker references the `.vercel/output/static` directory that this build step creates.
+
+With these steps the Cal.com application can be served entirely from Cloudflare Workers without losing any functionality.

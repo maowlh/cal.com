@@ -1,0 +1,25 @@
+# Copy this file to `.dev.vars` and replace the placeholder values before running
+# `yarn cf:dev`. The full list of supported environment variables is available in
+# the repository root `.env.example` file.
+
+# Core application secrets
+NEXTAUTH_SECRET="replace-with-random-string"
+CALENDSO_ENCRYPTION_KEY="replace-with-32-byte-base64"
+CRON_API_KEY="replace-with-secure-random"
+
+# URLs used by the Next.js configuration
+NEXTAUTH_URL="http://127.0.0.1:8787/api/auth"
+NEXT_PUBLIC_WEBAPP_URL="http://127.0.0.1:8787"
+NEXT_PUBLIC_WEBSITE_URL="http://127.0.0.1:8787"
+NEXT_PUBLIC_EMBED_LIB_URL="http://127.0.0.1:8787/embed/embed.js"
+
+# Database connections
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/calcom"
+DATABASE_DIRECT_URL="postgresql://postgres:postgres@localhost:5432/calcom"
+
+# Outbound email configuration (example uses Mailhog)
+EMAIL_FROM="Cal.com <no-reply@example.com>"
+EMAIL_SERVER_HOST="localhost"
+EMAIL_SERVER_PORT="1025"
+EMAIL_SERVER_USER=""
+EMAIL_SERVER_PASSWORD=""

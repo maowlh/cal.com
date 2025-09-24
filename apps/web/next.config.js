@@ -270,6 +270,14 @@ const nextConfig = (phase) => {
         "pg-native": false,
       };
 
+      if (process.env.CALCOM_CF_DEPLOY === "1") {
+        config.resolve.alias = {
+          ...(config.resolve.alias ?? {}),
+          "@calcom/prisma$": "@calcom/prisma/edge",
+          "@calcom/prisma/client$": "@prisma/client/edge",
+        };
+      }
+
       /**
        * TODO: Find more possible barrels for this project.
        *  @see https://github.com/vercel/next.js/issues/12557#issuecomment-1196931845
