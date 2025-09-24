@@ -133,6 +133,7 @@
       "pages": [
         "self-hosting/deployments/aws",
         "self-hosting/deployments/azure",
+        "self-hosting/deployments/cloudflare-workers",
         "self-hosting/deployments/elestio",
         "self-hosting/deployments/gcp",
         "self-hosting/deployments/railway",
