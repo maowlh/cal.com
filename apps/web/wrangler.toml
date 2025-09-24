@@ -1,0 +1,27 @@
+name = "calcom-web"
+main = ".vercel/output/functions/_worker.js/index.mjs"
+compatibility_date = "2025-01-09"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+# Set to your Cloudflare account identifier from the dashboard before deploying.
+account_id = "your-account-id"
+
+assets = { directory = ".vercel/output/static", binding = "ASSETS" }
+
+[build]
+command = "yarn cf:build"
+
+[[d1_databases]]
+binding = "CALCOM_DB"
+database_name = "calcom"
+# Replace with the UUID of your D1 database before deploying.
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[vars]
+# Update these URLs to match your Cloudflare deployment hostname before deploying.
+NEXT_PUBLIC_WEBAPP_URL = "https://your-domain.example"
+NEXT_PUBLIC_WEBSITE_URL = "https://your-domain.example"
+NEXT_PUBLIC_EMBED_LIB_URL = "https://your-domain.example/embed/embed.js"
+
+# Secrets such as NEXTAUTH_SECRET, CALENDSO_ENCRYPTION_KEY, DATABASE_URL and others
+# must be provided through `wrangler secret put` or environment variables at deploy time.

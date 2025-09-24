@@ -27,6 +27,9 @@
     "edit-app-template": "yarn app-store edit-template",
     "delete-app-template": "yarn app-store delete-template",
     "build": "turbo run build --filter=@calcom/web...",
+    "cf:build": "yarn workspace @calcom/web cf:build",
+    "cf:deploy": "yarn workspace @calcom/web cf:deploy",
+    "cf:dev": "yarn workspace @calcom/web cf:dev",
     "build:ai": "turbo run build --filter=\"@calcom/ai\"",
     "clean": "find . -name node_modules -o -name .next -o -name .turbo -o -name dist -type d -prune | xargs rm -rf",
     "db-deploy": "turbo run db-deploy",
@@ -86,6 +89,7 @@
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "2.29.4",
+    "@cloudflare/next-on-pages": "^1.13.0",
     "@faker-js/faker": "9.2.0",
     "@jetstreamapp/soql-parser-js": "^6.1.0",
     "@playwright/test": "^1.45.3",
@@ -113,7 +117,8 @@
     "typescript": "5.9.0-beta",
     "vitest": "^2.1.9",
     "vitest-fetch-mock": "^0.3.0",
-    "vitest-mock-extended": "^2.0.2"
+    "vitest-mock-extended": "^2.0.2",
+    "wrangler": "^3.101.0"
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.83.1",
